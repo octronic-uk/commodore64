@@ -3,6 +3,8 @@
 //      Uint test assertion utilities.
 // ---------------------------------------------------------
 
+#import "../keymap.s"
+
 .const print = $AB1E
 
 assert_pass:
@@ -18,9 +20,11 @@ assert_fail:
     rts
 
 pass_msg:
-    .text "PASS"
+    .text " PASS"
+    .byte key_return
     .byte $00
 
 fail_msg:
-    .text "FAIL"
+    .text " FAIL"
+    .byte key_return
     .byte $00

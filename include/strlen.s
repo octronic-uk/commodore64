@@ -13,7 +13,6 @@ _strlen_count:
     lda (strlen_lsb),y
     cmp #$00
     beq _strlen_done
-    sta $0400,y
     iny
     bne _strlen_count
 _strlen_done:
