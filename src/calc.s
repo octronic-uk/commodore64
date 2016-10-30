@@ -3,10 +3,10 @@
 //     A simple calculator
 // ---------------------------------------------------------
 
-#import "lib/octronic/console_colours.s"
-#import "lib/octronic/util.s"
-#import "lib/c64/colours.s"
-#import "lib/c64/keymap.s"
+#import "../include/util.s"
+#import "../include/colours.s"
+#import "../include/keymap.s"
+#import "border.s"
 
 BasicUpstart2(main)
     *=4000 "CALC"
@@ -15,25 +15,24 @@ BasicUpstart2(main)
 // Constants
 // ---------------------------------------------------------
 
-.const welcome_msg_row = $00
-.const options_row_1 = $04 
-.const options_row_2 = $05
-.const options_row_3 = $06
+.const prompt_msg_row = $04
+.const prompt_msg_col = $02
 
-.const options_col_1 = $00
+.const options_row_1 = $06
+.const options_row_2 = $07
+.const options_row_3 = $08
+
+.const options_col_1 = $02
 .const options_col_2 = $14
 
-.const options_prompt_row = $08
-.const selected_op_row = $09
+.const options_prompt_row = $0a
+.const selected_op_row = $0b
 
-.const operand_1_row = $0b
+.const operand_1_row = $0c
 .const operand_2_row = $0d
 
-.const prompt_col = $00
-.const prompt_response_col = $02
-
-.const footer_row = $17
-.const footer_col = $20
+.const prompt_col = $02
+.const prompt_response_col = $04
 
 // Pointers
 .const operation_ptr = $9000
@@ -46,11 +45,10 @@ BasicUpstart2(main)
 // ---------------------------------------------------------
 main: 
     jsr setup
-    jsr print_welcome
-    jsr print_footer
+    jsr print_prompt_msg
+    jsr print_options_prompt
 
 _main_loop:    
-    jsr print_options_prompt
     jsr get_operation
     jsr get_operands
     jsr do_operation
@@ -59,56 +57,33 @@ _main_loop:
 
 _main_exit:
     rts
-// end main
 
 setup:
     jsr clear_screen
     jsr set_colours
+    jsr draw_border
     rts
-// end setup
 
 set_colours:
-    ldx #blue
-    ldy #light_blue 
-    jsr console_colours
+    lda #green
+    sta text_colour_ptr
+    lda #black
+    sta border_colour_ptr 
+    sta background_colour_ptr 
     rts
-// end set_colours
 
-print_welcome:
-    // Plot Cursor
-    clc
-    ldx #welcome_msg_row
-    ldy #$00 // col
-    jsr set_cursor_pos
-    // Print msg
-    lda #<welcome_msg
-    ldy #>welcome_msg
-    jsr print_at_cursor 
-    rts
-// end print_welcome
-
-print_footer:
-    // Plot Cursor
-    clc
-    ldx #footer_row
-    ldy #footer_col
-    jsr set_cursor_pos
-    // Print msg
-    lda #<footer_msg
-    ldy #>footer_msg
-    jsr print_at_cursor
-    rts
-// end print_footer
-
-print_options_prompt:
+print_prompt_msg:
     // prompt
     clc
-    ldx #$02 // row
-    ldy #$00 // col 
+    ldx #prompt_msg_row
+    ldy #prompt_msg_col
     jsr set_cursor_pos
     lda #<prompt_msg
     ldy #>prompt_msg
     jsr print_at_cursor
+    rts
+
+print_options_prompt:
     jsr print_add_option
     jsr print_sub_option
     jsr print_mul_option
@@ -118,7 +93,7 @@ print_options_prompt:
     // Setup prompt 
     clc
     ldx #options_prompt_row
-    ldy #$00 // col 
+    ldy #prompt_col
     jsr set_cursor_pos
 
     lda #<prompt_char
@@ -126,7 +101,6 @@ print_options_prompt:
     jsr print_at_cursor
     
     rts
-// end print_prompt
 
 print_quit_option:
     clc
@@ -137,7 +111,6 @@ print_quit_option:
     ldy #>quit_msg
     jsr print_at_cursor
     rts
-// end print_quit_option
 
 
 print_add_option:
@@ -149,7 +122,6 @@ print_add_option:
     ldy #>add_msg
     jsr print_at_cursor
     rts
-// end print_add_option
 
 print_sub_option:
     clc
@@ -162,7 +134,6 @@ print_sub_option:
     jsr print_at_cursor
 
     rts
-// end print_sub_option
 
 print_mul_option:
     clc
@@ -173,7 +144,6 @@ print_mul_option:
     ldy #>mul_msg
     jsr print_at_cursor
     rts
-// end print_mul_option
 
 print_div_option:
     clc
@@ -184,7 +154,6 @@ print_div_option:
     ldy #>div_msg
     jsr print_at_cursor
     rts
-// end print_div_option
 
 get_operation:
     clc
@@ -197,7 +166,6 @@ get_operation:
     sta operation_ptr        // store the key to key buffer
     jsr print_selected_operation
     rts
-// end get_operation
 
 get_operand_1:
     clc
@@ -220,7 +188,6 @@ get_operand_1_loop:
     jsr print_key     // print key on the screen
     sta operand_1_ptr       // store the key to key buffer
     rts
-// end get_operand_1
 
 get_operand_2:
     clc
@@ -244,26 +211,22 @@ get_operand_2_loop:
     jsr print_key        // print key on the screen
     sta operand_2_ptr      // store the key to key buffer
     rts
-// end get_operand_2
 
 get_operands:
     jsr get_operand_1
     jsr get_operand_2
     rts
-// end get_operands
 
 do_operation:
     rts
-// end do_operation
 
 print_result:
     rts
-// end print_result
 
 print_selected_operation:
     clc
     ldx #selected_op_row
-    ldy #$00
+    ldy #prompt_col
     jsr set_cursor_pos
 
     lda operation_ptr
@@ -286,7 +249,6 @@ print_selected_operation:
     jmp print_invalid_mode_msg
 
     rts
-// end print_selected_operation    
 
 done:
     jmp return_to_basic 
@@ -296,49 +258,37 @@ print_add_mode_msg:
     ldy #>add_mode_msg
     jsr print_at_cursor
     rts
-// end print_op_add_msg
 
 print_sub_mode_msg:
     lda #<sub_mode_msg
     ldy #>sub_mode_msg
     jsr print_at_cursor
     rts
-// print_op_sub_mode_msg
 
 print_mul_mode_msg:
     lda #<mul_mode_msg
     ldy #>mul_mode_msg
     jsr print_at_cursor
     rts
-// end print_mul_mode_msg
 
 print_div_mode_msg:
     lda #<div_mode_msg
     ldy #>div_mode_msg
     jsr print_at_cursor
     rts
-// end print_div_mode_msg 
 
 print_invalid_mode_msg:
     lda #<invalid_mode_msg
     ldy #>invalid_mode_msg
     jsr print_at_cursor
     jmp get_operation
-// end print_invalid_mode_msg
+
 // ---------------------------------------------------------
 // Variables
 // ---------------------------------------------------------
 
-welcome_msg: 
-    .text ">>>>>>>>>>> WELCOME TO CALC! <<<<<<<<<<<"
-    .byte $00
-
-footer_msg: 
-    .text "OCTRONIC"
-    .byte $00
-
 prompt_msg:
-    .text "PLEASE CHOOSE AN OPERATION"
+    .text "PLEASE CHOOSE AN OPERATION..."
     .byte $00
 
 quit_msg:
@@ -352,7 +302,7 @@ add_msg:
     .byte $00
 
 add_mode_msg:
-    .text "ADD MODE                                "
+    .text "ADD MODE            "
     .byte $00
 
 sub_msg:
@@ -360,7 +310,7 @@ sub_msg:
     .byte $00
 
 sub_mode_msg:
-    .text "SUBTRACT MODE                           "
+    .text "SUBTRACT MODE       "
     .byte $00
 
 mul_msg:
@@ -368,7 +318,7 @@ mul_msg:
     .byte $00
 
 mul_mode_msg:
-    .text "MULTIPLY MODE                           "
+    .text "MULTIPLY MODE       "
     .byte $00
 
 div_msg:
@@ -376,13 +326,17 @@ div_msg:
     .byte $00
 
 div_mode_msg:
-    .text "DIVIDE MODE                             "
+    .text "DIVIDE MODE         "
     .byte $00
 
 invalid_mode_msg:
-    .text "INVALID MODE                            "
+    .text "INVALID MODE        "
     .byte $00
 
 prompt_char:
     .text ">"
+    .byte $00
+
+border_title:
+    .text "CALCULATOR"
     .byte $00

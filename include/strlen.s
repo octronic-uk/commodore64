@@ -4,6 +4,8 @@
 //     by $00. Store result in x. 
 //----------------------------------------------------------
 
+#importonce
+
 .const strlen_lsb = $FE
 .const strlen_msb = $FF
 

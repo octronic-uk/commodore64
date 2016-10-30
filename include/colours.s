@@ -3,6 +3,8 @@
 //     Colour pallette definitions.
 // ---------------------------------------------------------
 
+#importonce
+
 .const black       = $00
 .const white       = $01
 .const red         = $02
