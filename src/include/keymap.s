@@ -61,7 +61,7 @@
 .const key_equal         = $3d
 .const key_greater_than  = $3e
 .const key_question_mark = $3f
-.const key_@ = $40
+.const key_at = $40
 .const key_a = $41
 .const key_b = $42
 .const key_c = $43
@@ -86,10 +86,10 @@
 .const key_x = $58
 .const key_y = $59
 .const key_z = $5a
-.const key_z = $5b
-.const key_z = $5c
-.const key_z = $5d
-.const key_z = $5e
+//.const key_z = $5b
+//.const key_z = $5c
+//.const key_z = $5d
+//.const key_z = $5e
 .const key_back = $5f
 
 

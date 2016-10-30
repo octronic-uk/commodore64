@@ -4,6 +4,7 @@
 // ---------------------------------------------------------
 
 #import "lib/octronic/console_colours.s"
+#import "lib/octronic/util.s"
 #import "lib/c64/colours.s"
 #import "lib/c64/keymap.s"
 
@@ -13,12 +14,6 @@ BasicUpstart2(main)
 // ---------------------------------------------------------
 // Constants
 // ---------------------------------------------------------
-.const clear_screen = $E544
-.const set_cursor_pos = $FFF0
-.const print_at_cursor = $AB1E
-.const read_key = $FFE4
-.const print_key = $FFD2
-.const return_to_basic = $BFFF
 
 .const welcome_msg_row = $00
 .const options_row_1 = $04 
@@ -41,7 +36,7 @@ BasicUpstart2(main)
 .const footer_col = $20
 
 // Pointers
-.const op_ptr = $9000
+.const operation_ptr = $9000
 .const operand_1_ptr = $9001
 .const operand_2_ptr = $9003
 .const exit_flag_ptr = $9004
@@ -199,7 +194,7 @@ get_operation:
     jsr read_key      // read key
     beq get_operation // if no key pressed loop forever
     jsr print_key         // print key on the screen
-    sta op_ptr        // store the key to key buffer
+    sta operation_ptr        // store the key to key buffer
     jsr print_selected_operation
     rts
 // end get_operation
@@ -271,7 +266,7 @@ print_selected_operation:
     ldy #$00
     jsr set_cursor_pos
 
-    lda op_ptr
+    lda operation_ptr
 
     cmp #key_1
     beq print_add_mode_msg
