@@ -34,11 +34,11 @@ BasicUpstart2(main)
 .const prompt_col = $02
 .const prompt_response_col = $04
 
-// Pointers
-.const operation_ptr = $9000
-.const operand_1_ptr = $9001
-.const operand_2_ptr = $9003
-.const exit_flag_ptr = $9004
+// Addresses
+.const operation_addr = $7000
+.const operand_index  = $7010
+.const operand_1_addr = $7100
+.const operand_2_addr = $7200
 
 // ---------------------------------------------------------
 // Program Entry Point
@@ -67,7 +67,7 @@ setup:
 set_colours:
     lda #green
     sta text_colour_ptr
-    lda #black
+    lda #grey_1
     sta border_colour_ptr 
     sta background_colour_ptr 
     rts
@@ -160,10 +160,10 @@ get_operation:
     ldx #options_prompt_row
     ldy #prompt_response_col 
     jsr set_cursor_pos
-    jsr read_key      // read key
-    beq get_operation // if no key pressed loop forever
-    jsr print_key         // print key on the screen
-    sta operation_ptr        // store the key to key buffer
+    jsr read_key
+    beq get_operation
+    jsr print_key
+    sta operation_addr
     jsr print_selected_operation
     rts
 
@@ -182,11 +182,20 @@ get_operand_1:
     ldy #prompt_response_col
     jsr set_cursor_pos
 
+    ldx #$00
+    stx operand_index
 get_operand_1_loop:
-    jsr read_key      // read key
-    beq get_operand_1_loop  // if no key pressed loop forever
-    jsr print_key     // print key on the screen
-    sta operand_1_ptr       // store the key to key buffer
+    jsr read_key
+    beq get_operand_1_loop
+    ldx operand_index
+    sta operand_1_addr,x
+    inx
+    stx operand_index
+    jsr print_key
+    cmp #key_return
+    bne get_operand_1_loop
+    lda #$00
+    sta operand_1_addr,x
     rts
 
 get_operand_2:
@@ -204,12 +213,20 @@ get_operand_2:
     ldy #prompt_response_col 
     jsr set_cursor_pos
 
-
+    ldx #$00
+    stx operand_index
 get_operand_2_loop:
-    jsr read_key        // read key
-    beq get_operand_2_loop // if no key pressed loop forever
-    jsr print_key        // print key on the screen
-    sta operand_2_ptr      // store the key to key buffer
+    jsr read_key
+    beq get_operand_2_loop
+    ldx operand_index
+    sta operand_2_addr,x
+    inx
+    stx operand_index
+    jsr print_key
+    cmp #key_return
+    bne get_operand_2_loop
+    lda #$00
+    sta operand_2_addr,x
     rts
 
 get_operands:
@@ -229,7 +246,7 @@ print_selected_operation:
     ldy #prompt_col
     jsr set_cursor_pos
 
-    lda operation_ptr
+    lda operation_addr
 
     cmp #key_1
     beq print_add_mode_msg
