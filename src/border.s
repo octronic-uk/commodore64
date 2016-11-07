@@ -8,18 +8,19 @@
 //*=4000 "Border!"
 
 #import "../include/colours.s"
-#import "../include/util.s"
 #import "../include/strlen.s"
+#import "../include/screen.s"
+#import "../include/io.s"
 
-.const _border_top_left_char     = $D5
-.const _border_top_right_char    = $C9
-.const _border_bottom_left_char  = $CA
-.const _border_bottom_right_char = $CB
+.const _border_top_left_char     = $55
+.const _border_top_right_char    = $49
+.const _border_bottom_left_char  = $4A
+.const _border_bottom_right_char = $4B
 
-.const _border_horiz_bar_char    = $C3
-.const _border_vert_bar_char     = $C2
-.const _border_left_sep_char     = $EB
-.const _border_right_sep_char    = $F3
+.const _border_horiz_bar_char    = $43
+.const _border_vert_bar_char     = $42
+.const _border_left_sep_char     = $6B
+.const _border_right_sep_char    = $73
 
 .const _border_row_1  = $0400 
 .const _border_row_2  = $0428
@@ -38,7 +39,7 @@
 // Program Entry Point
 //----------------------------------------------------------
 draw_border: 
-    jsr clear_screen
+    jsr screen_clear
     jsr _border_draw_top
     jsr _border_draw_sides
     jsr _border_draw_bottom
@@ -87,7 +88,7 @@ _border_draw_title:
     ldx #$01
     ldy $C0
     clc
-    jsr set_cursor_pos
+    jsr screen_cursor
     lda #<border_title 
     ldy #>border_title
     jsr $AB1E

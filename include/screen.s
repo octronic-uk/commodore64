@@ -6,6 +6,12 @@
 #importonce
 
 // ---------------------------------------------------------
+// Screen Dimensions
+// ---------------------------------------------------------
+.const screen_width  = $28
+.const screen_height = $19
+
+// ---------------------------------------------------------
 // Screen char RAM
 // ---------------------------------------------------------
 .const screen_start  = $0400
@@ -65,3 +71,11 @@
 .const screen_colour_row_23 = $db98
 .const screen_colour_row_24 = $dbc0
 .const screen_colour_end    = $dbe7
+
+// ---------------------------------------------------------
+// Screen Functions
+// ---------------------------------------------------------
+.const screen_clear  = $E544
+.const screen_cursor = $FFF0
+.const screen_print  = $AB1E
+

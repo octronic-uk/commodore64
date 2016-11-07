@@ -3,7 +3,7 @@
 //     A simple calculator
 // ---------------------------------------------------------
 
-#import "../include/util.s"
+#import "../include/io.s"
 #import "../include/colours.s"
 #import "../include/keymap.s"
 #import "border.s"
@@ -55,19 +55,16 @@ _main_loop:
     jsr print_result
     jmp _main_loop
 
-_main_exit:
-    rts
-
 setup:
-    jsr clear_screen
+    jsr screen_clear
     jsr set_colours
     jsr draw_border
     rts
 
 set_colours:
-    lda #green
+    lda #orange
     sta text_colour_ptr
-    lda #grey_1
+    lda #blue
     sta border_colour_ptr 
     sta background_colour_ptr 
     rts
@@ -77,10 +74,10 @@ print_prompt_msg:
     clc
     ldx #prompt_msg_row
     ldy #prompt_msg_col
-    jsr set_cursor_pos
+    jsr screen_cursor
     lda #<prompt_msg
     ldy #>prompt_msg
-    jsr print_at_cursor
+    jsr screen_print
     rts
 
 print_options_prompt:
@@ -94,22 +91,22 @@ print_options_prompt:
     clc
     ldx #options_prompt_row
     ldy #prompt_col
-    jsr set_cursor_pos
+    jsr screen_cursor
 
     lda #<prompt_char
     ldy #>prompt_char
-    jsr print_at_cursor
+    jsr screen_print
     
     rts
 
 print_quit_option:
     clc
-    ldx #options_row_3 // row
+    ldx #options_row_3
     ldy #options_col_1
-    jsr set_cursor_pos
+    jsr screen_cursor
     lda #<quit_msg
     ldy #>quit_msg
-    jsr print_at_cursor
+    jsr screen_print
     rts
 
 
@@ -117,21 +114,21 @@ print_add_option:
     clc
     ldx #options_row_1
     ldy #options_col_1
-    jsr set_cursor_pos
+    jsr screen_cursor
     lda #<add_msg
     ldy #>add_msg
-    jsr print_at_cursor
+    jsr screen_print
     rts
 
 print_sub_option:
     clc
     ldx #options_row_2
     ldy #options_col_1
-    jsr set_cursor_pos
+    jsr screen_cursor
 
     lda #<sub_msg
     ldy #>sub_msg
-    jsr print_at_cursor
+    jsr screen_print
 
     rts
 
@@ -139,30 +136,30 @@ print_mul_option:
     clc
     ldx #options_row_1
     ldy #options_col_2
-    jsr set_cursor_pos
+    jsr screen_cursor
     lda #<mul_msg
     ldy #>mul_msg
-    jsr print_at_cursor
+    jsr screen_print
     rts
 
 print_div_option:
     clc
     ldx #options_row_2
     ldy #options_col_2
-    jsr set_cursor_pos
+    jsr screen_cursor
     lda #<div_msg
     ldy #>div_msg
-    jsr print_at_cursor
+    jsr screen_print
     rts
 
 get_operation:
     clc
     ldx #options_prompt_row
     ldy #prompt_response_col 
-    jsr set_cursor_pos
-    jsr read_key
+    jsr screen_cursor
+    jsr io_getin
     beq get_operation
-    jsr print_key
+    jsr io_chrout
     sta operation_addr
     jsr print_selected_operation
     rts
@@ -171,27 +168,27 @@ get_operand_1:
     clc
     ldx #operand_1_row
     ldy #prompt_col
-    jsr set_cursor_pos
+    jsr screen_cursor
 
     lda #<prompt_char
     ldy #>prompt_char
-    jsr print_at_cursor
+    jsr screen_print
 
     clc
     ldx #operand_1_row
     ldy #prompt_response_col
-    jsr set_cursor_pos
+    jsr screen_cursor
 
     ldx #$00
     stx operand_index
 get_operand_1_loop:
-    jsr read_key
+    jsr io_getin
     beq get_operand_1_loop
     ldx operand_index
     sta operand_1_addr,x
     inx
     stx operand_index
-    jsr print_key
+    jsr io_chrout
     cmp #key_return
     bne get_operand_1_loop
     lda #$00
@@ -202,27 +199,27 @@ get_operand_2:
     clc
     ldx #operand_2_row
     ldy #prompt_col 
-    jsr set_cursor_pos
+    jsr screen_cursor
 
     lda #<prompt_char
     ldy #>prompt_char
-    jsr print_at_cursor
+    jsr screen_print
 
     clc
     ldx #operand_2_row
     ldy #prompt_response_col 
-    jsr set_cursor_pos
+    jsr screen_cursor
 
     ldx #$00
     stx operand_index
 get_operand_2_loop:
-    jsr read_key
+    jsr io_getin
     beq get_operand_2_loop
     ldx operand_index
     sta operand_2_addr,x
     inx
     stx operand_index
-    jsr print_key
+    jsr io_chrout
     cmp #key_return
     bne get_operand_2_loop
     lda #$00
@@ -244,7 +241,7 @@ print_selected_operation:
     clc
     ldx #selected_op_row
     ldy #prompt_col
-    jsr set_cursor_pos
+    jsr screen_cursor
 
     lda operation_addr
 
@@ -268,36 +265,36 @@ print_selected_operation:
     rts
 
 done:
-    jmp return_to_basic 
+    brk
 
 print_add_mode_msg:
     lda #<add_mode_msg
     ldy #>add_mode_msg
-    jsr print_at_cursor
+    jsr screen_print
     rts
 
 print_sub_mode_msg:
     lda #<sub_mode_msg
     ldy #>sub_mode_msg
-    jsr print_at_cursor
+    jsr screen_print
     rts
 
 print_mul_mode_msg:
     lda #<mul_mode_msg
     ldy #>mul_mode_msg
-    jsr print_at_cursor
+    jsr screen_print
     rts
 
 print_div_mode_msg:
     lda #<div_mode_msg
     ldy #>div_mode_msg
-    jsr print_at_cursor
+    jsr screen_print
     rts
 
 print_invalid_mode_msg:
     lda #<invalid_mode_msg
     ldy #>invalid_mode_msg
-    jsr print_at_cursor
+    jsr screen_print
     jmp get_operation
 
 // ---------------------------------------------------------
