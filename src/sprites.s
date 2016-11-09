@@ -2,7 +2,10 @@
 // sprites.s
 //----------------------------------------------------------
 
+#import "../include/keymap.s"
 #import "../include/screen.s"
+#import "../include/io.s"
+#import "../sprites/ship.s"
 
 BasicUpstart2(main)
     *=4000 "Sprites"
@@ -24,36 +27,64 @@ main:
     sta sprite0
     lda #1
     sta enable
-    lda #7
+    lda #00
     sta colour0
-    ldx #0
-    lda #0
-cleanup:
-    sta ship,x
-    inx
-    cpx #63
-    bne cleanup
-    ldx #0
-    lda #255
-build:
-    sta ship,x
-    inx
-    cpx #63
-    bne build
     lda #0
     sta msbx
-    ldx #0
-    lda #70
-move:
-    sta sp0x
-    stx sp0y
-    ldy #0
-pause:  
+    ldx #255
+    lda #160
+    sta sp0y
+    stx sp0x
+
+get_key:
+    jsr io_getin
+    cmp #$00
+    beq get_key
+
+    cmp #key_w
+    beq move_up
+
+    cmp #key_a
+    beq move_left
+
+    cmp #key_s
+    beq move_down
+
+    cmp #key_d
+    beq move_right
+
+    bne after_key
+
+move_up:
+    dec sp0y
+    jmp after_key
+
+move_down:
+    inc sp0y
+    jmp after_key
+
+move_left:
+    dec sp0x
+    jmp after_key
+
+move_right:
+    inc sp0x
+    jmp after_key
+
+after_key:
+
+    ldy #00
+pause_1:  
     iny
     cpy #255
-    bne pause
-    inx
-    //cpx #254
-    //bne move
-    jmp move
+    bne pause_1
+/*
+pause_2:  
+    dey
+    cpy #00
+    bne pause_2
+*/
+    jmp get_key
+
     rts
+
