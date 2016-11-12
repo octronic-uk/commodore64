@@ -74,7 +74,7 @@ BasicUpstart2(main)
 // Misc Constants
 .const temp_1 = $7000
 .const living_cell_char = $51
-.const regular_space  = $20
+.const dead_cell_char  = $20
 
 .const is_alive = $F6
 .const alive = $FF
@@ -185,8 +185,8 @@ BasicUpstart2(main)
         lda $64
         sta temp_1
         // bitmask to reduce frequency
-        and #%00000110
-        cmp #%00000110
+        and #%00000010
+        cmp #%00000010
         bne _next_seed
         ldx #$00
         lda #living_cell_char
@@ -216,6 +216,10 @@ BasicUpstart2(main)
         jsr do_sim
         jsr results_to_screen
         jsr io_getin
+        cmp #key_back
+        bne _loop_check_q
+        jmp main
+    _loop_check_q: 
         cmp #key_q
         bne loop 
         rts
@@ -261,7 +265,7 @@ BasicUpstart2(main)
         clc
         // lsb
         lda screen_ptr_lsb
-        adc #<$7000
+        //adc #<$7000
         sta result_cell_lsb
         // msb
         lda screen_ptr_msb
@@ -272,6 +276,7 @@ BasicUpstart2(main)
         lda #0
         sta (result_cell_lsb,x)
         rts
+
 // IncrementResultCell =====================================
     increment_result_cell:
         ldx #0
@@ -484,7 +489,7 @@ BasicUpstart2(main)
         lda (result_cell_lsb,x)
         cmp #2
         bcs _test_rules_survive 
-        lda #living_cell_char
+        lda #dead_cell_char
         sta (result_cell_lsb,x)
         jmp _test_rules_done
     _test_rules_survive:
@@ -506,13 +511,13 @@ BasicUpstart2(main)
         // 3. Overcrowding - alive with >3 neighbours = dead
         ldx #0
         lda (result_cell_lsb,x)
-        cmp #3
+        cmp #4
         bcs _test_rules_set_dead
         lda #living_cell_char
         sta (result_cell_lsb,x)
         jmp _test_rules_done
-        // 4. Reproduction - dead with 3 neighbours = alive
     _test_rules_reproduction:
+        // 4. Reproduction - dead with 3 neighbours = alive
         ldx #0
         lda (result_cell_lsb,x)
         cmp #3
@@ -521,7 +526,7 @@ BasicUpstart2(main)
         sta (result_cell_lsb,x)
         jmp _test_rules_done
     _test_rules_set_dead:
-        lda #regular_space
+        lda #dead_cell_char
         sta (result_cell_lsb,x)
     _test_rules_done:
         rts
@@ -569,15 +574,14 @@ BasicUpstart2(main)
         rts
 
 // Memory Allocations ======================================
+    welcome_msg:
+        .text "ASH'S GAME OF LIFE"
+        .byte $00
 
-welcome_msg:
-    .text "CONWAY'S GAME OF LIFE"
-    .byte $00
+    enter_msg:
+        .text "PRESS 'RETURN' TO START"
+        .byte  $00
 
-enter_msg:
-    .text "PRESS 'RETURN' TO START"
-    .byte  $00
-
-quit_msg:
-    .text "PRESS 'Q' TO QUIT"
-    .byte $00
+    quit_msg:
+        .text "PRESS 'Q' TO QUIT"
+        .byte $00
