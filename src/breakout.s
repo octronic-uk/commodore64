@@ -15,19 +15,17 @@
 // Bootstrapper
 BasicUpstart2(main)
     *=4000 "Breakout"
-
 // Imports
     #import "../include/keymap.s"
     #import "../include/io.s"
     #import "../include/screen.s"
     #import "../include/colours.s"
-
 // Constants
     .const TRUE  = $FF
     .const FALSE = $00
-
-    .const blocks_end_row       = screen_row_8
-
+    .const blocks_start_row     = screen_row_2
+    .const blocks_start_colour_row = screen_colour_row_2
+    .const blocks_end_row       = screen_row_9
     .const screen_msb           = $6F
     .const screen_lsb           = $6E
     .const screen_colour_msb    = $6D
@@ -50,28 +48,23 @@ BasicUpstart2(main)
     .const ball_last_colour     = $5C
     .const paddle_moved         = $5A
     .const paddle_offset_x_last = $50
-
     .const score_msb = $7001
     .const score_lsb = $7000
-
     .const red_score    = 5
     .const orange_score = 10
     .const yellow_score = 15
     .const green_score  = 20
     .const blue_score   = 25
-    
     .const paddle_row        = screen_row_24
     .const paddle_colour_row = screen_colour_row_24
     .const paddle_colour     = light_blue
     .const bg_colour         = grey_1
     .const border_colour     = black
-
     .const ball_dir_none  = $00
     .const ball_dir_up    = $01 
     .const ball_dir_down  = $02
     .const ball_dir_left  = $04
     .const ball_dir_right = $08 
-
     .const ball_colour      = white
     .const space_char       = $20
     .const block_char       = $EF
@@ -79,7 +72,6 @@ BasicUpstart2(main)
     .const block_char_right = $FA
     .const ball_char        = $51
     .const paddle_width     = 11
-
     .const port_a     = $DC00 // CIA#1 (Port Register A)
     .const port_b     = $DC01 // CIA#1 (Port Register B)
     .const data_dir_a = $DC02 // CIA#1 (Data Direction Register A)
@@ -91,7 +83,9 @@ BasicUpstart2(main)
         sta game_over
         jsr screen_clear
         jsr set_bg_colour
+        jsr setup_score
         jsr setup_paddle
+        jsr draw_paddle
         jsr setup_ball
         jsr setup_blocks
     _main_loop:
@@ -101,7 +95,7 @@ BasicUpstart2(main)
         cli
         jsr update_ball
         jsr update_paddle
-        ldx #25
+        ldx #18 // num pause loops
         jsr pause
         lda game_over
         cmp #TRUE
@@ -138,9 +132,6 @@ BasicUpstart2(main)
         bne _pause_loop_x
         rts
 
-
-
-
 // Black Screen
     set_bg_colour:
         lda #bg_colour
@@ -149,20 +140,44 @@ BasicUpstart2(main)
         sta border_colour_ptr
         rts
 
-// Draw Blocks
-    setup_blocks:
-        // Store screen ptr
+// Setup Score
+    setup_score:
+        // Init score counter
+        lda #00
+        sta score_lsb
+        sta score_msb
+        // Print 'score' text
         lda #<screen_start
         sta screen_lsb
         lda #>screen_start
         sta screen_msb
-
-        // Store screen colour ptr
-        lda #<screen_colour_start
+        lda #<screen_colour_row_0
         sta screen_colour_lsb
-        lda #>screen_colour_start
+        lda #>screen_colour_row_0
         sta screen_colour_msb
+        ldy #00
+    _setup_score_print_text:
+        lda #white
+        sta (screen_colour_lsb),y
+        lda score,y
+        sta (screen_lsb),y
+        iny
+        cmp #FALSE
+        bne _setup_score_print_text
+        rts
 
+// Draw Blocks
+    setup_blocks:
+        // Store screen ptr
+        lda #<blocks_start_row
+        sta screen_lsb
+        lda #>blocks_start_row
+        sta screen_msb
+        // Store screen colour ptr
+        lda #<blocks_start_colour_row
+        sta screen_colour_lsb
+        lda #>blocks_start_colour_row
+        sta screen_colour_msb
         // init block colour
         lda #0
         sta block_colour
@@ -429,14 +444,25 @@ BasicUpstart2(main)
         lda #>screen_colour_row_23
         adc #0
         sta ball_colour_msb
+        jsr store_ball_last
+        rts
+
+// Store Ball Last
+    store_ball_last:
+        // Store last position
+        lda ball_lsb
+        sta ball_last_lsb
+        lda ball_msb
+        sta ball_last_msb
+        // Store last Colour
+        lda ball_colour_lsb
+        sta ball_last_colour_lsb
+        lda ball_last_msb
+        sta ball_last_colour_msb
         rts
 
 // Update Ball
     update_ball:
-        // skip if game started not
-        lda game_started
-        cmp #TRUE
-        bne _update_ball_done
         // Save last position
         lda ball_lsb
         sta ball_last_lsb
@@ -447,10 +473,8 @@ BasicUpstart2(main)
         sta ball_last_colour_lsb
         lda ball_colour_msb
         sta ball_last_colour_msb
-
         jsr check_ball_collision
         jsr move_ball
-        
         // Check if redraw required
         lda ball_last_msb
         cmp ball_msb
@@ -458,7 +482,6 @@ BasicUpstart2(main)
         lda ball_last_lsb
         cmp ball_lsb
         bne _update_ball_draw
-
     _update_ball_draw:
         jsr erase_last_ball
         jsr draw_ball
@@ -537,7 +560,6 @@ BasicUpstart2(main)
         lda #>screen_start
         sta screen_msb
         ldx #0
-
     _check_ball_left_collision_next:
         lda ball_msb
         cmp screen_msb 
@@ -547,7 +569,6 @@ BasicUpstart2(main)
         bne _check_ball_left_collision_incr
         jsr flip_x_direction
         jmp _check_ball_left_collision_done
-
     _check_ball_left_collision_incr:
         inx
         cpx #25
@@ -560,7 +581,6 @@ BasicUpstart2(main)
         adc #0
         sta screen_msb
         jmp _check_ball_left_collision_next
-
     _check_ball_left_collision_done:
         rts
 
@@ -573,7 +593,6 @@ BasicUpstart2(main)
         lda #>screen_start
         adc #0
         sta screen_msb
-
         ldx #0
     _check_ball_right_collision_next:
         lda ball_msb
@@ -583,7 +602,6 @@ BasicUpstart2(main)
         cmp screen_lsb
         bne _check_ball_right_collision_incr
         jsr flip_x_direction
-
     _check_ball_right_collision_incr:
         inx
         cpx #25
@@ -596,7 +614,6 @@ BasicUpstart2(main)
         adc #0
         sta screen_msb
         jmp _check_ball_right_collision_next
-
     _check_ball_right_collision_done:
         rts
 
@@ -819,7 +836,6 @@ BasicUpstart2(main)
         beq _move_ball_down
         // Neither
         jmp _move_ball_x
-
     _move_ball_up:
         // Position
         lda ball_lsb
@@ -838,7 +854,6 @@ BasicUpstart2(main)
         sbc #00
         sta ball_colour_msb
         jmp _move_ball_x
-
     _move_ball_down:
         // Position
         lda ball_lsb
@@ -857,7 +872,6 @@ BasicUpstart2(main)
         adc #00
         sta ball_colour_msb
         jmp _move_ball_x
-
     _move_ball_x:
         // left
         lda ball_direction
@@ -871,7 +885,6 @@ BasicUpstart2(main)
         beq _move_ball_right
         // Neither
         jmp _move_ball_done
-
     _move_ball_left:
         // Position
         lda ball_lsb
@@ -890,7 +903,6 @@ BasicUpstart2(main)
         sbc #00
         sta ball_colour_msb
         jmp _move_ball_done
-
     _move_ball_right:
         // Position
         lda ball_lsb
@@ -909,7 +921,6 @@ BasicUpstart2(main)
         adc #00
         sta ball_colour_msb
         jmp _move_ball_done
-
     _move_ball_done:
         rts
         
@@ -920,23 +931,18 @@ BasicUpstart2(main)
         sta data_dir_a        
         lda #%00000000 // CIA#1 port B = inputs
         sta data_dir_b  
-
         // Check for A Key
         lda #%11111101 // testing column kb-mat
         sta port_a
-        //lda port_b // Debounce?
         lda port_b
         and #%00000100
         beq _get_input_a
-
         // Check for D key
         lda #%11111011 // testing column kb-mat
         sta port_a
-        //lda port_b  // Debounce?
         lda port_b 
         and #%00000100
         beq _get_input_d
-
         // Ignore space after game has started
         lda game_started
         cmp #FALSE
@@ -944,11 +950,9 @@ BasicUpstart2(main)
         // Check for Space key
         lda #%01111111 // testing column kb-mat
         sta port_a
-        //lda port_b  // Debounce?
         lda port_b 
         and #%00010000
         beq _get_input_space
-
         // No Match
         jmp _get_input_done
     _get_input_a:
@@ -965,7 +969,6 @@ BasicUpstart2(main)
         jsr _move_ball_left
     _get_input_a_game_started:
         jmp _get_input_done
-
     _get_input_d:
         lda #paddle_width
         sta $00
@@ -984,7 +987,6 @@ BasicUpstart2(main)
         jsr _move_ball_right
     _get_input_d_game_started:
         jmp _get_input_done
-
     _get_input_space:
         lda #$00
         ora #$01
@@ -993,6 +995,9 @@ BasicUpstart2(main)
         lda #TRUE
         sta game_started
         jmp _get_input_done
-
     _get_input_done:
         rts
+
+score:
+    .text "score:"
+    .byte $00
