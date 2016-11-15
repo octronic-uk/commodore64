@@ -26,6 +26,8 @@ BasicUpstart2(main)
     .const TRUE  = $FF
     .const FALSE = $00
 
+    .const blocks_end_row       = screen_row_8
+
     .const screen_msb           = $6F
     .const screen_lsb           = $6E
     .const screen_colour_msb    = $6D
@@ -46,9 +48,17 @@ BasicUpstart2(main)
     .const ball_last_colour_lsb = $5E
     .const ball_last_char       = $5D
     .const ball_last_colour     = $5C
-    .const redraw_blocks        = $5B
     .const paddle_moved         = $5A
     .const paddle_offset_x_last = $50
+
+    .const score_msb = $7001
+    .const score_lsb = $7000
+
+    .const red_score    = 5
+    .const orange_score = 10
+    .const yellow_score = 15
+    .const green_score  = 20
+    .const blue_score   = 25
     
     .const paddle_row        = screen_row_24
     .const paddle_colour_row = screen_colour_row_24
@@ -70,15 +80,13 @@ BasicUpstart2(main)
     .const ball_char        = $51
     .const paddle_width     = 11
 
-    .const port_a     =  $DC00 // CIA#1 (Port Register A)
-    .const port_b     =  $DC01 // CIA#1 (Port Register B)
-    .const data_dir_a =  $DC02 // CIA#1 (Data Direction Register A)
-    .const data_dir_b =  $DC03 // CIA#1 (Data Direction Register B)
+    .const port_a     = $DC00 // CIA#1 (Port Register A)
+    .const port_b     = $DC01 // CIA#1 (Port Register B)
+    .const data_dir_a = $DC02 // CIA#1 (Data Direction Register A)
+    .const data_dir_b = $DC03 // CIA#1 (Data Direction Register B)
 
 // Program Entry Point
     main: 
-        lda #TRUE
-        sta redraw_blocks
         lda #FALSE
         sta game_over
         jsr screen_clear
@@ -163,10 +171,10 @@ BasicUpstart2(main)
         jsr next_block_line
         // stop at half way point
         lda screen_lsb
-        cmp #<screen_row_12
+        cmp #<blocks_end_row
         bcc _setup_blocks_next
         lda screen_msb
-        cmp #>screen_row_12
+        cmp #>blocks_end_row
         bcc _setup_blocks_next
         rts
 
@@ -195,7 +203,7 @@ BasicUpstart2(main)
         clc
         adc #4
         tax
-        cpx #40
+        cpx #screen_width
         bne _draw_block_line_loop
         jsr next_colour
         jsr next_colour
@@ -637,12 +645,11 @@ BasicUpstart2(main)
 
 // check ball block collision
     check_ball_block_collision:
+        // Only check when ball is going up
         lda ball_direction
         and #ball_dir_up
         cmp #ball_dir_up
         bne _check_ball_block_collision_done
-        lda #FALSE
-        sta redraw_blocks
         // get ball pos into screen pointer
         lda ball_lsb
         sta screen_lsb
@@ -662,16 +669,85 @@ BasicUpstart2(main)
         // is it a block char?
         cmp #block_char
         beq _check_ball_block_collision_true
-        // is it the right block char?
+        // or the right block char?
         cmp #block_char_right
         beq _check_ball_block_collision_true
-
         jmp _check_ball_block_collision_done
-
     _check_ball_block_collision_true:
+        jsr add_score 
         jsr remove_block
         jsr flip_y_direction
     _check_ball_block_collision_done:
+        rts
+
+// Add Score
+    add_score:
+        // Get colour ram position above ball
+        lda ball_colour_lsb
+        sec
+        sbc #screen_width
+        sta screen_colour_lsb
+        lda ball_colour_msb
+        sbc #0
+        sta screen_colour_msb
+        ldy #0
+        // Read Value
+        lda (screen_colour_lsb),y
+        cmp #red
+        beq _add_score_red
+        cmp #orange
+        beq _add_score_orange
+        cmp #yellow
+        beq _add_score_yellow
+        cmp #green
+        beq _add_score_green
+        cmp #blue
+        beq _add_score_blue
+        rts
+    _add_score_red:
+        lda score_lsb
+        clc
+        adc red_score
+        sta score_lsb
+        lda score_msb
+        adc #0
+        sta score_msb
+        rts
+    _add_score_orange:
+        lda score_lsb
+        clc
+        adc orange_score
+        sta score_lsb
+        lda score_msb
+        adc #0
+        sta score_msb
+        rts
+    _add_score_yellow:
+        lda score_lsb
+        clc
+        adc yellow_score
+        sta score_lsb
+        lda score_msb
+        adc #0
+        sta score_msb
+        rts
+    _add_score_green:
+        lda score_lsb
+        clc
+        adc green_score
+        sta score_lsb
+        lda score_msb
+        adc #0
+        sta score_msb
+        rts
+    _add_score_blue:
+        lda score_lsb
+        clc
+        adc blue_score
+        sta score_lsb
+        lda score_msb
+        adc #0
+        sta score_msb
         rts
 
 // Remove Bolck
@@ -748,7 +824,7 @@ BasicUpstart2(main)
         // Position
         lda ball_lsb
         sec
-        sbc #40
+        sbc #screen_width
         sta ball_lsb
         lda ball_msb
         sbc #00
@@ -756,7 +832,7 @@ BasicUpstart2(main)
         // Colour
         lda ball_colour_lsb
         sec
-        sbc #40
+        sbc #screen_width
         sta ball_colour_lsb
         lda ball_colour_msb
         sbc #00
@@ -767,7 +843,7 @@ BasicUpstart2(main)
         // Position
         lda ball_lsb
         clc
-        adc #40
+        adc #screen_width
         sta ball_lsb
         lda ball_msb
         adc #00
@@ -775,7 +851,7 @@ BasicUpstart2(main)
         // Colour
         lda ball_colour_lsb
         clc
-        adc #40
+        adc #screen_width
         sta ball_colour_lsb
         lda ball_colour_msb
         adc #00
