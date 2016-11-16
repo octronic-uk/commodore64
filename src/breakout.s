@@ -77,6 +77,12 @@ BasicUpstart2(main)
     .const data_dir_a = $DC02 // CIA#1 (Data Direction Register A)
     .const data_dir_b = $DC03 // CIA#1 (Data Direction Register B)
 
+    .const joystick_up    = $01
+    .const joystick_down  = $02
+    .const joystick_left  = $04
+    .const joystick_right = $08
+    .const joystick_fire  = $10
+
 // Program Entry Point
     main: 
         lda #FALSE
@@ -95,6 +101,7 @@ BasicUpstart2(main)
         cli
         jsr update_ball
         jsr update_paddle
+        jsr update_score
         ldx #18 // num pause loops
         jsr pause
         lda game_over
@@ -155,6 +162,7 @@ BasicUpstart2(main)
         sta screen_colour_lsb
         lda #>screen_colour_row_0
         sta screen_colour_msb
+
         ldy #00
     _setup_score_print_text:
         lda #white
@@ -162,7 +170,8 @@ BasicUpstart2(main)
         lda score,y
         sta (screen_lsb),y
         iny
-        cmp #FALSE
+        lda score,y
+        cmp #$00
         bne _setup_score_print_text
         rts
 
@@ -486,6 +495,10 @@ BasicUpstart2(main)
         jsr erase_last_ball
         jsr draw_ball
     _update_ball_done:
+        rts
+
+// Update Score
+    update_score:
         rts
 
 // Check Ball Collision
@@ -967,6 +980,8 @@ BasicUpstart2(main)
         cmp #TRUE
         beq _get_input_a_game_started
         jsr _move_ball_left
+        jsr erase_last_ball
+        jsr draw_ball
     _get_input_a_game_started:
         jmp _get_input_done
     _get_input_d:
@@ -985,6 +1000,8 @@ BasicUpstart2(main)
         cmp #TRUE
         beq _get_input_d_game_started
         jsr _move_ball_right
+        jsr erase_last_ball
+        jsr draw_ball
     _get_input_d_game_started:
         jmp _get_input_done
     _get_input_space:
